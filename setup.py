@@ -9,5 +9,6 @@ setup(
         'boto3', 'regex', 'sacremoses', 'filelock', 'tokenizers',
         'tqdm', 'konlpy', 'sentencepiece==0.1.91', 'dataclasses',
         'transformers==2.10.0'
+        #'transformers'
     ]
 )

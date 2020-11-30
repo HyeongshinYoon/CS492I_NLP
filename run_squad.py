@@ -23,6 +23,8 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
+# use ElectraForQuestionAnswering for koelectra-v2
+from electra_model import ElectraForQuestionAnswering
 from transformers import (
     AdamW,
     AlbertConfig,
@@ -44,6 +46,9 @@ from transformers import (
     XLNetForQuestionAnswering,
     XLNetTokenizer,
     get_linear_schedule_with_warmup,
+    ElectraModel,
+    ElectraConfig,
+    ElectraTokenizer,
 )
 from open_squad import squad_convert_examples_to_features
 
@@ -73,10 +78,17 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
+"""
 ALL_MODELS = sum(
     (tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig, RobertaConfig, XLNetConfig, XLMConfig)),
     (),
 )
+"""
+
+MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
+ALL_MODELS = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
+
+#print("all models : ", ALL_MODELS)
 
 MODEL_CLASSES = {
     "bert": (BertConfig, BertForQuestionAnswering, BertTokenizer),
@@ -85,6 +97,8 @@ MODEL_CLASSES = {
     "xlm": (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
+    #"koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
+    "koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
 }
 
 
@@ -580,7 +594,8 @@ def main():
         default=None,
         type=str,
         required=True,
-        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(ALL_MODELS),
+        #help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(ALL_MODELS),
+        help="Path to pretrained model or model identifier from huggingface.co/models",
     )
     parser.add_argument(
         "--output_dir",
