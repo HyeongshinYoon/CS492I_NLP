@@ -26,6 +26,10 @@ from tqdm import tqdm, trange
 # use ElectraForQuestionAnswering for koelectra-v2
 from electra_model import ElectraForQuestionAnswering
 from transformers import (
+    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
+    AutoConfig,
+    AutoModelForPreTraining,
+    AutoTokenizer,
     AdamW,
     AlbertConfig,
     AlbertForQuestionAnswering,
@@ -49,6 +53,7 @@ from transformers import (
     ElectraModel,
     ElectraConfig,
     ElectraTokenizer,
+    #ElectraForQuestionAnswering
 )
 from open_squad import squad_convert_examples_to_features
 
@@ -99,6 +104,7 @@ MODEL_CLASSES = {
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
     #"koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
     "koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
+    #"koelectra" : (AutoConfig, AutoModelForPreTraining, AutoTokenizer)
 }
 
 
