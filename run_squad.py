@@ -25,6 +25,7 @@ from tqdm import tqdm, trange
 
 # use ElectraForQuestionAnswering for koelectra-v2
 from electra_model import ElectraForQuestionAnswering
+#from ensemble import EnsembledModel
 from transformers import (
     MODEL_FOR_QUESTION_ANSWERING_MAPPING,
     AutoConfig,
@@ -102,8 +103,8 @@ MODEL_CLASSES = {
     "xlm": (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
-    #"koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
-    "koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
+    "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
+    #"koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
     #"koelectra" : (AutoConfig, AutoModelForPreTraining, AutoTokenizer)
 }
 
@@ -847,12 +848,16 @@ def main():
         do_lower_case=args.do_lower_case,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
+    
     model = model_class.from_pretrained(
         args.model_name_or_path,
         from_tf=bool(".ckpt" in args.model_name_or_path),
         config=config,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
+
+    #For ensemble learning
+    #model = EnsembledModel(config)
 
     if args.local_rank == 0:
         # Make sure only the first process in distributed training will download model & vocab

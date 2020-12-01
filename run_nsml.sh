@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 nsml run \
-  -m 'koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 20, autoconfig, automodel used, fp16)' \
+  -m 'koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 20, fp16)' \
   -d korquad-open-ldbd3 \
   -g 1 \
   -c 2 \
