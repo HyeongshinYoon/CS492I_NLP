@@ -6,8 +6,6 @@ setup(
     name='kaist-korquad-test',
     version='1.0',
     install_requires=[
-        'boto3', 'regex', 'sacremoses', 'filelock', 'tokenizers',
-        'tqdm', 'konlpy', 'sentencepiece==0.1.91', 'dataclasses',
-        'transformers==2.10.0'
+        'claf'
     ]
 )
