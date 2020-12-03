@@ -414,7 +414,8 @@ def select_best_predictions(all_nbest_json):
     best_answer_predictions = collections.OrderedDict()
     for qas_id, nbest_json in all_nbest_json.items():
         qa_id_without_s = "[SEP]".join(qas_id.split("[SEP]")[:2])
-        print("NBEST_JSON LENGTH: ", len(nbest_json))
+        #if (len(nbest_json) > 1):
+        #    logger.info("nbest_json length larger than 1: %s" % (len(nbest_json)))
 
         for i in range(len(nbest_json)):
             text = nbest_json[i]["text"]

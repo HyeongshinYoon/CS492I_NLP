@@ -551,7 +551,16 @@ class SquadProcessor(DataProcessor):
 
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
+            relevance_list = []
             for pi, paragraph in enumerate(entry["paragraphs"]):
+                relevance = paragraph["relevance"]
+                relevance_list.append(relevance)
+            sorted_ind = np.argsort(-np.array(relevance_list))
+            logger.info("sorted relevance: %s" % (relevance_list[sorted_ind]))
+
+            #for pi, paragraph in enumerate(entry["paragraphs"]):
+            for pi in sorted_ind:
+                paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
                 if context_text is None:
