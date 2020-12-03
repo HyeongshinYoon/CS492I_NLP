@@ -22,6 +22,7 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
+from functools import partial
 
 # use ElectraForQuestionAnswering for koelectra-v2
 from electra_model import ElectraForQuestionAnswering
@@ -83,6 +84,8 @@ if not IS_ON_NSML:
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
+
+tqdm = partial(tqdm, mininterval=3600) # 1시간
 
 """
 ALL_MODELS = sum(
