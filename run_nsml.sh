@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 nsml run \
-  -m '경) koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 20) select paragraph by highest relevance' \
+  -m '경) koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 20) select paragraph by bi-directional relevance, select best prediction, droput: (0.3, 0.3, 0.0)' \
   -d korquad-open-ldbd3 \
   -g 1 \
   -c 2 \

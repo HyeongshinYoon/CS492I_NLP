@@ -542,6 +542,7 @@ class SquadProcessor(DataProcessor):
         examples = []
 
         has_answer_cnt, no_answer_cnt = 0, 0
+        ex_has_answer_cnt, ex_no_answer_cnt = 0, 0
         for entry in tqdm(input_data[:]):
             qa = entry['qa']
             question_text = qa["question"]
@@ -555,11 +556,12 @@ class SquadProcessor(DataProcessor):
             for pi, paragraph in enumerate(entry["paragraphs"]):
                 relevance = paragraph["relevance"]
                 relevance_list.append(relevance)
-            sorted_ind = np.argsort(-np.array(relevance_list))
-            logger.info("sorted relevance: %s" % (relevance_list[sorted_ind]))
+            np_relevance = np.array(relevance_list, dtype=float)
+            sorted_ind = np.argsort(-np_relevance)
 
             #for pi, paragraph in enumerate(entry["paragraphs"]):
             for pi in sorted_ind:
+                sorted_ind.remove(pi)
                 paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
@@ -605,9 +607,69 @@ class SquadProcessor(DataProcessor):
                 if is_training and per_qa_paragraph_cnt > 3:
                     break
 
+                if is_impossible:
+                    ex_no_answer_cnt += 1
+                else:
+                    ex_has_answer_cnt += 1
+
                 examples.append(example)
 
-        print("[{}] Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt))
+            per_qa_paragraph_cnt = 0
+            per_qa_unans_paragraph_cnt = 0
+            for pi in sorted_ind[::-1]:
+                paragraph = entry["paragraphs"][pi]
+                title = paragraph["title"]
+                context_text = str(paragraph["contents"])
+                if context_text is None:
+                    continue
+                qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
+                start_position_character = None
+                answers = []
+
+                if answer_text not in context_text:
+                    is_impossible = True
+                else:
+                    is_impossible = False
+
+                if not is_impossible:
+                    if is_training:
+                        start_position_character = context_text.index(answer_text)  # answer["answer_start"]
+                    else:
+                        answers = [{"text": answer_text,
+                                    "answer_start": context_text.index(answer_text)}]
+
+                example = SquadExample(
+                    qas_id=qas_id,
+                    question_text=question_text,
+                    context_text=context_text,
+                    answer_text=answer_text,
+                    start_position_character=start_position_character,
+                    title=title,
+                    is_impossible=is_impossible,
+                    answers=answers,
+                )
+                if is_impossible:
+                    no_answer_cnt += 1
+                    per_qa_unans_paragraph_cnt += 1
+                else:
+                    has_answer_cnt += 1
+
+                if is_impossible and per_qa_unans_paragraph_cnt > 3:
+                    continue
+
+                # todo: How to select training samples considering a memory limit.
+                per_qa_paragraph_cnt += 1
+                if is_training and per_qa_paragraph_cnt > 3:
+                    break
+
+                if is_impossible:
+                    ex_no_answer_cnt += 1
+                else:
+                    ex_has_answer_cnt += 1
+
+                examples.append(example)
+
+        print("[{}] Has Answer({}) / No Answer({}), Used: Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt, ex_has_answer_cnt, ex_no_answer_cnt))
         return examples
 
 

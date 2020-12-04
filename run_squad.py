@@ -845,6 +845,9 @@ def main():
     config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        hidden_dropout_prob=0.3,
+        attention_probs_dropout_prob=0.3,
+        summary_last_dropout=0.0,
     )
     tokenizer = tokenizer_class.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
