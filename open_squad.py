@@ -558,10 +558,11 @@ class SquadProcessor(DataProcessor):
                 relevance_list.append(relevance)
             np_relevance = np.array(relevance_list, dtype=float)
             sorted_ind = np.argsort(-np_relevance)
+            inv_sorted_ind = sorted_ind
 
             #for pi, paragraph in enumerate(entry["paragraphs"]):
             for pi in sorted_ind:
-                sorted_ind.remove(pi)
+                np.delete(inv_sorted_inv, pi)
                 paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
@@ -616,7 +617,7 @@ class SquadProcessor(DataProcessor):
 
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
-            for pi in sorted_ind[::-1]:
+            for pi in inv_sorted_ind[::-1]:
                 paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
