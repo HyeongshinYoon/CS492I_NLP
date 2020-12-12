@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 nsml run \
-  -m '경) koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 20) select paragraph by bi-directional relevance, select best prediction, droput: (0.3, 0.3, 0.0)' \
+  -m '경) koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 2) select paragraph randomly, select best prediction, droput: (0.3, 0.3, 0.0), print number of paragraphs' \
   -d korquad-open-ldbd3 \
   -g 1 \
   -c 2 \
@@ -11,7 +11,7 @@ nsml run \
     --do_train
     --do_eval
     --data_dir train
-    --num_train_epochs 20
+    --num_train_epochs 2
     --per_gpu_train_batch_size 24
     --per_gpu_eval_batch_size 24
     --verbose_logging

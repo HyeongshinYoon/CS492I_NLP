@@ -12,6 +12,7 @@ import os
 import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
+import random
 
 import numpy as np
 from tqdm import tqdm
@@ -552,73 +553,22 @@ class SquadProcessor(DataProcessor):
 
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
-            relevance_list = []
-            for pi, paragraph in enumerate(entry["paragraphs"]):
-                relevance = paragraph["relevance"]
-                relevance_list.append(relevance)
-            np_relevance = np.array(relevance_list, dtype=float)
-            sorted_ind = np.argsort(-np_relevance)
-            inv_sorted_ind = sorted_ind
-
+            #relevance_list = []
             #for pi, paragraph in enumerate(entry["paragraphs"]):
-            for pi in sorted_ind:
-                np.delete(inv_sorted_inv, pi)
-                paragraph = entry["paragraphs"][pi]
-                title = paragraph["title"]
-                context_text = str(paragraph["contents"])
-                if context_text is None:
-                    continue
-                qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
-                start_position_character = None
-                answers = []
+            #    relevance = paragraph["relevance"]
+            #    relevance_list.append(relevance)
+            #np_relevance = np.array(relevance_list, dtype=float)
+            #sorted_ind = np.argsort(-np_relevance)
+            #inv_sorted_ind = sorted_ind
+            shuffled_list = []
+            for pi, paragraph in enumerate(entry["paragraphs"]):
+                shuffled_list.append([pi, paragraph])
+            random.shuffle(shuffled_list)
 
-                if answer_text not in context_text:
-                    is_impossible = True
-                else:
-                    is_impossible = False
-
-                if not is_impossible:
-                    if is_training:
-                        start_position_character = context_text.index(answer_text)  # answer["answer_start"]
-                    else:
-                        answers = [{"text": answer_text,
-                                    "answer_start": context_text.index(answer_text)}]
-
-                example = SquadExample(
-                    qas_id=qas_id,
-                    question_text=question_text,
-                    context_text=context_text,
-                    answer_text=answer_text,
-                    start_position_character=start_position_character,
-                    title=title,
-                    is_impossible=is_impossible,
-                    answers=answers,
-                )
-                if is_impossible:
-                    no_answer_cnt += 1
-                    per_qa_unans_paragraph_cnt += 1
-                else:
-                    has_answer_cnt += 1
-
-                if is_impossible and per_qa_unans_paragraph_cnt > 3:
-                    continue
-
-                # todo: How to select training samples considering a memory limit.
-                per_qa_paragraph_cnt += 1
-                if is_training and per_qa_paragraph_cnt > 3:
-                    break
-
-                if is_impossible:
-                    ex_no_answer_cnt += 1
-                else:
-                    ex_has_answer_cnt += 1
-
-                examples.append(example)
-
-            per_qa_paragraph_cnt = 0
-            per_qa_unans_paragraph_cnt = 0
-            for pi in inv_sorted_ind[::-1]:
-                paragraph = entry["paragraphs"][pi]
+            for pi, paragraph in shuffled_list:
+            #for pi in sorted_ind:
+                #np.delete(inv_sorted_ind, pi)
+                #paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
                 if context_text is None:
