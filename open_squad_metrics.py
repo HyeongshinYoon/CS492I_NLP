@@ -414,21 +414,18 @@ def select_best_predictions(all_nbest_json):
     best_answer_predictions = collections.OrderedDict()
     for qas_id, nbest_json in all_nbest_json.items():
         qa_id_without_s = "[SEP]".join(qas_id.split("[SEP]")[:2])
-        #if (len(nbest_json) > 1):
-        #    logger.info("nbest_json length larger than 1: %s" % (len(nbest_json)))
 
-        for i in range(len(nbest_json)):
-            text = nbest_json[i]["text"]
-            prob = nbest_json[i]["probability"]
+        text = nbest_json[0]["text"]
+        prob = nbest_json[0]["probability"]
 
-            if qa_id_without_s not in best_answer_max_prob:
+        if qa_id_without_s not in best_answer_max_prob:
+            best_answer_max_prob[qa_id_without_s] = prob
+            best_answer_predictions[qa_id_without_s] = text
+        else:
+            is_max_prob_updated = prob > best_answer_max_prob[qa_id_without_s]
+            if is_max_prob_updated:
                 best_answer_max_prob[qa_id_without_s] = prob
                 best_answer_predictions[qa_id_without_s] = text
-            else:
-                is_max_prob_updated = prob > best_answer_max_prob[qa_id_without_s]
-                if is_max_prob_updated:
-                    best_answer_max_prob[qa_id_without_s] = prob
-                    best_answer_predictions[qa_id_without_s] = text
     return best_answer_predictions
 
 
