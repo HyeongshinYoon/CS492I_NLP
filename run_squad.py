@@ -24,7 +24,8 @@ from tqdm import tqdm, trange
 
 # use ElectraForQuestionAnswering for koelectra-v3
 from electra_model import ElectraForQuestionAnswering
-#from ensemble import EnsembledModel
+from tokenization_kobert import KoBertTokenizer
+
 from transformers import (
     MODEL_FOR_QUESTION_ANSWERING_MAPPING,
     AutoConfig,
@@ -93,9 +94,8 @@ MODEL_CLASSES = {
     "xlm": (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
-    "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
-    #"koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
-    #"koelectra" : (AutoConfig, AutoModelForPreTraining, AutoTokenizer)
+    "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer),
+    "kobert" : (BertConfig, BertForQuestionAnswering, KoBertTokenizer)
 }
 
 
@@ -850,9 +850,6 @@ def main():
         config=config,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
-
-    #For ensemble learning
-    #model = EnsembledModel(config)
 
     if args.local_rank == 0:
         # Make sure only the first process in distributed training will download model & vocab

@@ -1,8 +1,6 @@
 """
 KorQuAD open processor
-
 https://github.com/huggingface/transformers/blob/master/src/transformers/data/processors/squad.py
-
 """
 
 import json
@@ -276,7 +274,6 @@ def squad_convert_examples_to_features(
     """
     Converts a list of examples into a list of features that can be directly given as input to a model.
     It is model-dependant and takes advantage of many of the tokenizer's features to create the model's inputs.
-
     Args:
         examples: list of :class:`~transformers.data.processors.squad.SquadExample`
         tokenizer: an instance of a child of :class:`~transformers.PreTrainedTokenizer`
@@ -288,16 +285,11 @@ def squad_convert_examples_to_features(
             if 'pt': returns a torch.data.TensorDataset,
             if 'tf': returns a tf.data.Dataset
         threads: multiple processing threadsa-smi
-
-
     Returns:
         list of :class:`~transformers.data.processors.squad.SquadFeatures`
-
     Example::
-
         processor = SquadV2Processor()
         examples = processor.get_dev_examples(data_dir)
-
         features = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
@@ -466,19 +458,14 @@ class SquadProcessor(DataProcessor):
     def get_examples_from_dataset(self, dataset, evaluate=False):
         """
         Creates a list of :class:`~transformers.data.processors.squad.SquadExample` using a TFDS dataset.
-
         Args:
             dataset: The tfds dataset loaded from `tensorflow_datasets.load("squad")`
             evaluate: boolean specifying if in evaluation mode or in training mode
-
         Returns:
             List of SquadExample
-
         Examples::
-
             import tensorflow_datasets as tfds
             dataset = tfds.load("squad")
-
             training_examples = get_examples_from_dataset(dataset, evaluate=False)
             evaluation_examples = get_examples_from_dataset(dataset, evaluate=True)
         """
@@ -497,12 +484,10 @@ class SquadProcessor(DataProcessor):
     def get_train_examples(self, data_dir, example_style, filename=None):
         """
         Returns the training examples from the data directory.
-
         Args:
             data_dir: Directory containing the data files used for training and evaluating.
             filename: None by default, specify this if the training file has a different name than the original one
                 which is `train-v1.1.json` and `train-v2.0.json` for squad versions 1.1 and 2.0 respectively.
-
         """
         if data_dir is None:
             data_dir = ""
@@ -520,7 +505,6 @@ class SquadProcessor(DataProcessor):
     def get_eval_examples(self, data_dir, example_style, filename=None):
         """
         Returns the evaluation example from the data directory.
-
         Args:
             data_dir: Directory containing the data files used for training and evaluating.
             filename: None by default, specify this if the evaluation file has a different name than the original one
@@ -725,7 +709,6 @@ class SquadProcessor(DataProcessor):
 
                     examples.append(example)
 
-
         print("[{}] Has Answer({}) / No Answer({}), Used: Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt, ex_has_answer_cnt, ex_no_answer_cnt))
         return examples
 
@@ -744,7 +727,6 @@ class SquadV2Processor(SquadProcessor):
 class SquadExample(object):
     """
     A single training/test example for the Squad dataset, as loaded from disk.
-
     Args:
         qas_id: The example's unique identifier
         question_text: The question string
@@ -809,7 +791,6 @@ class SquadFeatures(object):
     Single squad example features to be fed to a model.
     Those features are model-specific and can be crafted from :class:`~transformers.data.processors.squad.SquadExample`
     using the :method:`~transformers.data.processors.squad.squad_convert_examples_to_features` method.
-
     Args:
         input_ids: Indices of input sequence tokens in the vocabulary.
         attention_mask: Mask to avoid performing attention on padding token indices.
@@ -865,7 +846,6 @@ class SquadFeatures(object):
 class SquadResult(object):
     """
     Constructs a SquadResult which can be used to evaluate a model's output on the SQuAD dataset.
-
     Args:
         unique_id: The unique identifier corresponding to that example.
         start_logits: The logits corresponding to the start of the answer
