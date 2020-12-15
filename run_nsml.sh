@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 nsml run \
-  -m 'koelectra (pretrained : base(v3), epoch: 2, dropout (0.3, 0.3, 0.0))' \
+  -m 'koelectra (pretrained : base(v3), epoch: 2, dropout(0.3, 0.3, 0.0))' \
   -d korquad-open-ldbd3 \
   -g 1 \
   -c 2 \
