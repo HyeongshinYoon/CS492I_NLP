@@ -709,7 +709,6 @@ class SquadProcessor(DataProcessor):
 
                     examples.append(example)
 
-
         print("[{}] Has Answer({}) / No Answer({}), Used: Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt, ex_has_answer_cnt, ex_no_answer_cnt))
         return examples
 
