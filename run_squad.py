@@ -490,6 +490,7 @@ def predict(args, model, tokenizer, prefix="", val_or_test="val"):
             args.version_2_with_negative,
             tokenizer,
             args.verbose_logging,
+            args.select_by_addition,
             is_test=is_test,
         )
     else:
@@ -507,6 +508,7 @@ def predict(args, model, tokenizer, prefix="", val_or_test="val"):
             args.version_2_with_negative,
             args.null_score_diff_threshold,
             tokenizer,
+            args.select_by_addition,
             is_test=is_test,
         )
 
@@ -732,6 +734,9 @@ def main():
         help="The maximum length of an answer that can be generated. This is needed because the start "
              "and end predictions are not conditioned on one another.",
     )
+    parser.add_argument("--select_by_addition", default=False, type=bool, help="Set to True if addition method is to be used for selecting predictions")
+    parser.add_argument("--hidden_dropout_prob", default=0.3, type=float, help="The dropout probability for all fully connected layers in the embeddings, encoder, and pooler")
+    parser.add_argument("--attention_probs_dropout_prob", default=0.3, type=float, help="The dropout ratio for the attention probabilities")
     parser.add_argument(
         "--verbose_logging",
         action="store_true",
@@ -845,8 +850,8 @@ def main():
     config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
-        hidden_dropout_prob=0.3,
-        attention_probs_dropout_prob=0.3,
+        hidden_dropout_prob=args.hidden_dropout_prob,
+        attention_probs_dropout_prob=args.attention_probs_dropout_prob,
         summary_last_dropout=0.0,
     )
     tokenizer = tokenizer_class.from_pretrained(

@@ -553,22 +553,24 @@ class SquadProcessor(DataProcessor):
 
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
-            #relevance_list = []
-            #for pi, paragraph in enumerate(entry["paragraphs"]):
-            #    relevance = paragraph["relevance"]
-            #    relevance_list.append(relevance)
-            #np_relevance = np.array(relevance_list, dtype=float)
-            #sorted_ind = np.argsort(-np_relevance)
-            #inv_sorted_ind = sorted_ind
-            shuffled_list = []
+            relevance_list = []
             for pi, paragraph in enumerate(entry["paragraphs"]):
-                shuffled_list.append([pi, paragraph])
-            random.shuffle(shuffled_list)
+                relevance = paragraph["relevance"]
+                relevance_list.append(relevance)
+            np_relevance = np.array(relevance_list, dtype=float)
+            sorted_ind = np.argsort(-np_relevance)
+            #inv_sorted_ind = sorted_ind
 
-            for pi, paragraph in shuffled_list:
-            #for pi in sorted_ind:
+            #shuffled_list = []
+            #for pi, paragraph in enumerate(entry["paragraphs"]):
+            #    shuffled_list.append([pi, paragraph])
+            #random.shuffle(shuffled_list)
+
+            #for pi, paragraph in shuffled_list:
+            for pi in sorted_ind:
+            #for pi, paragraph in enumerate(entry["paragraphs"]):
                 #np.delete(inv_sorted_ind, pi)
-                #paragraph = entry["paragraphs"][pi]
+                paragraph = entry["paragraphs"][pi]
                 title = paragraph["title"]
                 context_text = str(paragraph["contents"])
                 if context_text is None:
