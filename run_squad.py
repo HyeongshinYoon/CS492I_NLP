@@ -3,9 +3,8 @@
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
 
 """
-KorQuAD open 형 학습 스크립트
+KorQuAD open
 
-본 스크립트는 다음의 파일을 바탕으로 작성 됨
 https://github.com/huggingface/transformers/blob/master/examples/question-answering/run_squad.py
 
 """
@@ -23,9 +22,10 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
-# use ElectraForQuestionAnswering for koelectra-v2
+# use ElectraForQuestionAnswering for koelectra-v3
 from electra_model import ElectraForQuestionAnswering
-#from ensemble import EnsembledModel
+from tokenization_kobert import KoBertTokenizer
+
 from transformers import (
     MODEL_FOR_QUESTION_ANSWERING_MAPPING,
     AutoConfig,
@@ -58,20 +58,11 @@ from transformers import (
 )
 from open_squad import squad_convert_examples_to_features
 
-'''
-from transformers.data.metrics.squad_metrics import (
-    compute_predictions_log_probs,
-    compute_predictions_logits,
-    squad_evaluate,
-)
-from transformers.data.processors.squad import SquadResult, SquadV1Processor, SquadV2Processor
-'''
-# ''
-# KorQuAD-Open-Naver-Search 사용할때 전처리 코드.
 from open_squad_metrics import (
     compute_predictions_log_probs,
     compute_predictions_logits,
     squad_evaluate,
+    squad_open_evaluate,
 )
 from open_squad import SquadResult, SquadV1Processor, SquadV2Processor
 
@@ -103,9 +94,8 @@ MODEL_CLASSES = {
     "xlm": (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
     "distilbert": (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
-    "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer) # for koelectra-v2
-    #"koelectra": (ElectraConfig, ElectraModel, ElectraTokenizer)
-    #"koelectra" : (AutoConfig, AutoModelForPreTraining, AutoTokenizer)
+    "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer),
+    "kobert" : (BertConfig, BertForQuestionAnswering, KoBertTokenizer)
 }
 
 
@@ -554,9 +544,9 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             if evaluate:
                 filename = args.predict_file if val_or_test == "val" else "test_data/korquad_open_test.json"
-                examples = processor.get_eval_examples(args.data_dir, filename=filename)
+                examples = processor.get_eval_examples(args.data_dir, filename=filename, example_style=args.example_style)
             else:
-                examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
+                examples = processor.get_train_examples(args.data_dir, filename=args.train_file, example_style=args.example_style)
 
         print("Starting squad_convert_examples_to_features")
         features, dataset = squad_convert_examples_to_features(
@@ -752,6 +742,8 @@ def main():
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
+    parser.add_argument("--example_style", type=str, default="", help="Change the example style. ['iter', 'rand', 'rele']")
+    
     parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
     parser.add_argument(
         "--fp16",
@@ -769,7 +761,7 @@ def main():
     parser.add_argument("--server_port", type=str, default="", help="Can be used for distant debugging.")
 
     parser.add_argument("--threads", type=int, default=1, help="multiple threads for converting example to features")
-
+    
     ### DO NOT MODIFY THIS BLOCK ###
     # arguments for nsml
     parser.add_argument('--pause', type=int, default=0)
@@ -842,6 +834,9 @@ def main():
     config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
+        hidden_dropout_prob=0.3,
+        attention_probs_dropout_prob=0.3,
+        summary_last_dropout=0.0,
     )
     tokenizer = tokenizer_class.from_pretrained(
         args.tokenizer_name if args.tokenizer_name else args.model_name_or_path,
@@ -855,9 +850,6 @@ def main():
         config=config,
         cache_dir=args.cache_dir if args.cache_dir else None,
     )
-
-    #For ensemble learning
-    #model = EnsembledModel(config)
 
     if args.local_rank == 0:
         # Make sure only the first process in distributed training will download model & vocab

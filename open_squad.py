@@ -1,9 +1,6 @@
 """
-KorQuAD open 형 데이터 processor
-
-본 스크립트는 다음의 파일을 바탕으로 작성 됨
+KorQuAD open processor
 https://github.com/huggingface/transformers/blob/master/src/transformers/data/processors/squad.py
-
 """
 
 import json
@@ -13,6 +10,7 @@ import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
 
+import random
 import numpy as np
 from tqdm import tqdm
 
@@ -276,7 +274,6 @@ def squad_convert_examples_to_features(
     """
     Converts a list of examples into a list of features that can be directly given as input to a model.
     It is model-dependant and takes advantage of many of the tokenizer's features to create the model's inputs.
-
     Args:
         examples: list of :class:`~transformers.data.processors.squad.SquadExample`
         tokenizer: an instance of a child of :class:`~transformers.PreTrainedTokenizer`
@@ -288,16 +285,11 @@ def squad_convert_examples_to_features(
             if 'pt': returns a torch.data.TensorDataset,
             if 'tf': returns a tf.data.Dataset
         threads: multiple processing threadsa-smi
-
-
     Returns:
         list of :class:`~transformers.data.processors.squad.SquadFeatures`
-
     Example::
-
         processor = SquadV2Processor()
         examples = processor.get_dev_examples(data_dir)
-
         features = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
@@ -466,19 +458,14 @@ class SquadProcessor(DataProcessor):
     def get_examples_from_dataset(self, dataset, evaluate=False):
         """
         Creates a list of :class:`~transformers.data.processors.squad.SquadExample` using a TFDS dataset.
-
         Args:
             dataset: The tfds dataset loaded from `tensorflow_datasets.load("squad")`
             evaluate: boolean specifying if in evaluation mode or in training mode
-
         Returns:
             List of SquadExample
-
         Examples::
-
             import tensorflow_datasets as tfds
             dataset = tfds.load("squad")
-
             training_examples = get_examples_from_dataset(dataset, evaluate=False)
             evaluation_examples = get_examples_from_dataset(dataset, evaluate=True)
         """
@@ -494,15 +481,13 @@ class SquadProcessor(DataProcessor):
 
         return examples
 
-    def get_train_examples(self, data_dir, filename=None):
+    def get_train_examples(self, data_dir, example_style, filename=None):
         """
         Returns the training examples from the data directory.
-
         Args:
             data_dir: Directory containing the data files used for training and evaluating.
             filename: None by default, specify this if the training file has a different name than the original one
                 which is `train-v1.1.json` and `train-v2.0.json` for squad versions 1.1 and 2.0 respectively.
-
         """
         if data_dir is None:
             data_dir = ""
@@ -514,12 +499,12 @@ class SquadProcessor(DataProcessor):
                 os.path.join(data_dir, self.train_file if filename is None else filename), "r", encoding="utf-8"
         ) as reader:
             input_data = json.load(reader)["data"]
-        return self._create_examples(input_data, "train")
+        logger.info(example_style)
+        return self._create_examples(input_data, "train", example_style)
 
-    def get_eval_examples(self, data_dir, filename=None):
+    def get_eval_examples(self, data_dir, example_style, filename=None):
         """
         Returns the evaluation example from the data directory.
-
         Args:
             data_dir: Directory containing the data files used for training and evaluating.
             filename: None by default, specify this if the evaluation file has a different name than the original one
@@ -535,13 +520,14 @@ class SquadProcessor(DataProcessor):
                 os.path.join(data_dir, self.dev_file if filename is None else filename), "r", encoding="utf-8"
         ) as reader:
             input_data = json.load(reader)["data"]
-        return self._create_examples(input_data, "dev")
+        return self._create_examples(input_data, "dev", example_style)
 
-    def _create_examples(self, input_data, set_type):
+    def _create_examples(self, input_data, set_type, example_style):
         is_training = set_type == "train"
         examples = []
-
+            
         has_answer_cnt, no_answer_cnt = 0, 0
+        ex_has_answer_cnt, ex_no_answer_cnt = 0, 0
         for entry in tqdm(input_data[:]):
             qa = entry['qa']
             question_text = qa["question"]
@@ -551,54 +537,180 @@ class SquadProcessor(DataProcessor):
 
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
-            for pi, paragraph in enumerate(entry["paragraphs"]):
-                title = paragraph["title"]
-                context_text = str(paragraph["contents"])
-                if context_text is None:
-                    continue
-                qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
-                start_position_character = None
-                answers = []
+            
+            if example_style == "iter" or example_style == "rand":
+                pa_list = []
+                for pi, paragraph in enumerate(entry["paragraphs"]):
+                    pa_list.append([pi, paragraph])
+                if example_style == "rand":
+                    random.shuffle(pa_list)
+                for pi, paragraph in pa_list:
+                    title = paragraph["title"]
+                    context_text = str(paragraph["contents"])
+                    if context_text is None:
+                        continue
+                    qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
+                    start_position_character = None
+                    answers = []
 
-                if answer_text not in context_text:
-                    is_impossible = True
-                else:
-                    is_impossible = False
-
-                if not is_impossible:
-                    if is_training:
-                        start_position_character = context_text.index(answer_text)  # answer["answer_start"]
+                    if answer_text not in context_text:
+                        is_impossible = True
                     else:
-                        answers = [{"text": answer_text,
-                                    "answer_start": context_text.index(answer_text)}]
+                        is_impossible = False
 
-                example = SquadExample(
-                    qas_id=qas_id,
-                    question_text=question_text,
-                    context_text=context_text,
-                    answer_text=answer_text,
-                    start_position_character=start_position_character,
-                    title=title,
-                    is_impossible=is_impossible,
-                    answers=answers,
-                )
-                if is_impossible:
-                    no_answer_cnt += 1
-                    per_qa_unans_paragraph_cnt += 1
-                else:
-                    has_answer_cnt += 1
+                    if not is_impossible:
+                        if is_training:
+                            start_position_character = context_text.index(answer_text)  # answer["answer_start"]
+                        else:
+                            answers = [{"text": answer_text,
+                                        "answer_start": context_text.index(answer_text)}]
 
-                if is_impossible and per_qa_unans_paragraph_cnt > 3:
-                    continue
+                    example = SquadExample(
+                        qas_id=qas_id,
+                        question_text=question_text,
+                        context_text=context_text,
+                        answer_text=answer_text,
+                        start_position_character=start_position_character,
+                        title=title,
+                        is_impossible=is_impossible,
+                        answers=answers,
+                    )
+                    if is_impossible:
+                        no_answer_cnt += 1
+                        per_qa_unans_paragraph_cnt += 1
+                    else:
+                        has_answer_cnt += 1
 
-                # todo: How to select training samples considering a memory limit.
-                per_qa_paragraph_cnt += 1
-                if is_training and per_qa_paragraph_cnt > 3:
-                    break
+                    if is_impossible and per_qa_unans_paragraph_cnt > 3:
+                        continue
 
-                examples.append(example)
+                    # todo: How to select training samples considering a memory limit.
+                    per_qa_paragraph_cnt += 1
+                    if is_training and per_qa_paragraph_cnt > 3:
+                        break
 
-        print("[{}] Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt))
+                    if is_impossible:
+                        ex_no_answer_cnt += 1
+                    else:
+                        ex_has_answer_cnt += 1
+                    examples.append(example)
+
+            else:
+                relevance_list = []
+                for pi, paragraph in enumerate(entry["paragraphs"]):
+                    relevance = paragraph["relevance"]
+                    relevance_list.append([pi, paragraph, relevance])
+                relevance_list.sort(key=lambda x: x[2])
+                inv_relevance_list = relevance_list[::-1]
+                
+                for pi, paragraph, relevance in relevance_list:
+                    inv_relevance_list.remove([pi, paragraph, relevance])
+                    title = paragraph["title"]
+                    context_text = str(paragraph["contents"])
+                    if context_text is None:
+                        continue
+                    qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
+                    start_position_character = None
+                    answers = []
+
+                    if answer_text not in context_text:
+                        is_impossible = True
+                    else:
+                        is_impossible = False
+
+                    if not is_impossible:
+                        if is_training:
+                            start_position_character = context_text.index(answer_text)  # answer["answer_start"]
+                        else:
+                            answers = [{"text": answer_text,
+                                        "answer_start": context_text.index(answer_text)}]
+
+                    example = SquadExample(
+                        qas_id=qas_id,
+                        question_text=question_text,
+                        context_text=context_text,
+                        answer_text=answer_text,
+                        start_position_character=start_position_character,
+                        title=title,
+                        is_impossible=is_impossible,
+                        answers=answers,
+                    )
+                    if is_impossible:
+                        no_answer_cnt += 1
+                        per_qa_unans_paragraph_cnt += 1
+                    else:
+                        has_answer_cnt += 1
+
+                    if is_impossible and per_qa_unans_paragraph_cnt > 3:
+                        continue
+
+                    # todo: How to select training samples considering a memory limit.
+                    per_qa_paragraph_cnt += 1
+                    if is_training and per_qa_paragraph_cnt > 3:
+                        break
+
+                    if is_impossible:
+                        ex_no_answer_cnt += 1
+                    else:
+                        ex_has_answer_cnt += 1
+
+                    examples.append(example)
+
+                per_qa_paragraph_cnt, per_qa_unans_paragraph_cnt = 0, 0
+                for pi, paragraph, relevance in inv_relevance_list:
+                    title = paragraph["title"]
+                    context_text = str(paragraph["contents"])
+                    if context_text is None:
+                        continue
+                    qas_id = "{}[SEP]{}[SEP]{}".format(question_text, answer_text, pi)
+                    start_position_character = None
+                    answers = []
+
+                    if answer_text not in context_text:
+                        is_impossible = True
+                    else:
+                        is_impossible = False
+
+                    if not is_impossible:
+                        if is_training:
+                            start_position_character = context_text.index(answer_text)  # answer["answer_start"]
+                        else:
+                            answers = [{"text": answer_text,
+                                        "answer_start": context_text.index(answer_text)}]
+
+                    example = SquadExample(
+                        qas_id=qas_id,
+                        question_text=question_text,
+                        context_text=context_text,
+                        answer_text=answer_text,
+                        start_position_character=start_position_character,
+                        title=title,
+                        is_impossible=is_impossible,
+                        answers=answers,
+                    )
+                    if is_impossible:
+                        no_answer_cnt += 1
+                        per_qa_unans_paragraph_cnt += 1
+                    else:
+                        has_answer_cnt += 1
+
+                    if is_impossible and per_qa_unans_paragraph_cnt > 3:
+                        continue
+
+                    # todo: How to select training samples considering a memory limit.
+                    per_qa_paragraph_cnt += 1
+                    if is_training and per_qa_paragraph_cnt > 3:
+                        break
+
+                    if is_impossible:
+                        ex_no_answer_cnt += 1
+                    else:
+                        ex_has_answer_cnt += 1
+
+                    examples.append(example)
+
+
+        print("[{}] Has Answer({}) / No Answer({}), Used: Has Answer({}) / No Answer({})".format(set_type, has_answer_cnt, no_answer_cnt, ex_has_answer_cnt, ex_no_answer_cnt))
         return examples
 
 
@@ -616,7 +728,6 @@ class SquadV2Processor(SquadProcessor):
 class SquadExample(object):
     """
     A single training/test example for the Squad dataset, as loaded from disk.
-
     Args:
         qas_id: The example's unique identifier
         question_text: The question string
@@ -681,7 +792,6 @@ class SquadFeatures(object):
     Single squad example features to be fed to a model.
     Those features are model-specific and can be crafted from :class:`~transformers.data.processors.squad.SquadExample`
     using the :method:`~transformers.data.processors.squad.squad_convert_examples_to_features` method.
-
     Args:
         input_ids: Indices of input sequence tokens in the vocabulary.
         attention_mask: Mask to avoid performing attention on padding token indices.
@@ -737,7 +847,6 @@ class SquadFeatures(object):
 class SquadResult(object):
     """
     Constructs a SquadResult which can be used to evaluate a model's output on the SQuAD dataset.
-
     Args:
         unique_id: The unique identifier corresponding to that example.
         start_logits: The logits corresponding to the start of the answer
