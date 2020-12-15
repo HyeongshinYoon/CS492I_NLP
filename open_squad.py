@@ -9,6 +9,7 @@ import os
 import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
+import random
 
 import random
 import numpy as np

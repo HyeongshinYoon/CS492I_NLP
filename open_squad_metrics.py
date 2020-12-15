@@ -404,23 +404,44 @@ def _compute_softmax(scores):
     return probs
 
 
-def select_best_predictions(all_nbest_json):
+def select_best_predictions(all_nbest_json, select_by_addition):
     # todo: How to select the best answer among different contexts.
     best_answer_max_prob = collections.OrderedDict()
     best_answer_predictions = collections.OrderedDict()
     for qas_id, nbest_json in all_nbest_json.items():
         qa_id_without_s = "[SEP]".join(qas_id.split("[SEP]")[:2])
-        text = nbest_json[0]["text"]
-        prob = nbest_json[0]["probability"]
+
+        if (not select_by_addition):
+            max_text = nbest_json[0]["text"]
+            max_prob = nbest_json[0]["probability"]
+        else:
+            answer_prob_list = {}
+
+            for i in range(len(nbest_json)):
+                text = nbest_json[i]["text"]
+                prob = nbest_json[i]["probability"]
+
+                if text == "":
+                    break
+                if text not in answer_prob_list:
+                    answer_prob_list[text] = prob
+                else:
+                    answer_prob_list[text] += prob
+            if len(answer_prob_list) == 0:
+                max_text = ""
+                max_prob = 0
+            else:
+                max_text, max_prob = max(answer_prob_list.items())
 
         if qa_id_without_s not in best_answer_max_prob:
-            best_answer_max_prob[qa_id_without_s] = prob
-            best_answer_predictions[qa_id_without_s] = text
+            best_answer_max_prob[qa_id_without_s] = max_prob
+            best_answer_predictions[qa_id_without_s] = max_text
         else:
-            is_max_prob_updated = prob > best_answer_max_prob[qa_id_without_s]
+            is_max_prob_updated = max_prob > best_answer_max_prob[qa_id_without_s]
             if is_max_prob_updated:
-                best_answer_max_prob[qa_id_without_s] = prob
-                best_answer_predictions[qa_id_without_s] = text
+                best_answer_max_prob[qa_id_without_s] = max_prob
+                best_answer_predictions[qa_id_without_s] = max_text
+
     return best_answer_predictions
 
 
@@ -438,6 +459,7 @@ def compute_predictions_logits(
         version_2_with_negative,
         null_score_diff_threshold,
         tokenizer,
+        select_by_addition,
         is_test=False,
 ):
     """Write final predictions to the json file and log-odds of null if needed."""
@@ -633,7 +655,7 @@ def compute_predictions_logits(
 
     else:
         # todo: How to select the best answer among different contexts.
-        return select_best_predictions(all_nbest_json)
+        return select_best_predictions(all_nbest_json, select_by_addition)
 
 
 def compute_predictions_log_probs(
@@ -650,6 +672,7 @@ def compute_predictions_log_probs(
         version_2_with_negative,
         tokenizer,
         verbose_logging,
+        select_by_addition,
         is_test=False,
 ):
     """ XLNet write prediction logic (more complex than Bert's).
@@ -829,4 +852,4 @@ def compute_predictions_log_probs(
 
     else:
         # todo: How to select the best answer among different contexts.
-        return select_best_predictions(all_nbest_json)
+        return select_best_predictions(all_nbest_json, select_by_addition)
