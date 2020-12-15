@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 nsml run \
-  -m '경) koelectra (pretrained : base(v3), per_qa_paragraph_cnt > 3, epoch: 2), additive select prediction, select paragraph by largest relevance, droput: (0.3, 0.3, 0.0)' \
+  -m 'koelectra (pretrained : base(v3), epoch: 2, dropout (0.3, 0.3, 0.0))' \
   -d korquad-open-ldbd3 \
   -g 1 \
   -c 2 \
@@ -18,4 +18,4 @@ nsml run \
     --output_dir output
     --overwrite_output_dir
     --version_2_with_negative
-    --select_by_addition True"
+    --example_style iter"

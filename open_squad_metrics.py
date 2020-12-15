@@ -1,10 +1,6 @@
 """ 
 
-KorQuAD open 형 평가 스크립트
-
-본 스크립트는 다음의 파일을 바탕으로 작성 됨
-https://github.com/huggingface/transformers/blob/master/src/transformers/data/metrics/squad_metrics.py
-
+KorQuAD open
 """
 
 import collections
