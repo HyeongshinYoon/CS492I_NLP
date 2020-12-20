@@ -92,7 +92,7 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
-tqdm = partial(tqdm, mininterval=3600) # 1?‹œê°?
+tqdm = partial(tqdm, mininterval=3600) # 1hour
 
 """
 ALL_MODELS = sum(
