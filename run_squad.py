@@ -23,8 +23,25 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 from functools import partial
 
-# use ElectraForQuestionAnswering for koelectra-v3
+""" For using KoELECTRA
+
+Base repository : https://github.com/monologg/KoELECTRA
+
+use ElectraForQuestionAnswering code based on follow link
+https://github.com/monologg/KoELECTRA/blob/cdb5fd529c40fc5e294963e4678a1091cf5e5de3/finetune/src/model.py
+
+"""
 from electra_model import ElectraForQuestionAnswering
+
+""" For using KoBERT
+
+Original repository : https://github.com/SKTBrain/KoBERT
+Used repository : https://github.com/monologg/KoBERT-Transformers
+
+use KoBERT tokenizer code based on follow link
+https://github.com/monologg/KoBERT-Transformers/blob/master/tokenization_kobert.py
+
+"""
 from tokenization_kobert import KoBertTokenizer
 
 from transformers import (
@@ -55,7 +72,6 @@ from transformers import (
     ElectraModel,
     ElectraConfig,
     ElectraTokenizer,
-    #ElectraForQuestionAnswering
 )
 from open_squad import squad_convert_examples_to_features
 
@@ -88,7 +104,6 @@ ALL_MODELS = sum(
 MODEL_CONFIG_CLASSES = list(MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys())
 ALL_MODELS = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 
-#print("all models : ", ALL_MODELS)
 
 MODEL_CLASSES = {
     "bert": (BertConfig, BertForQuestionAnswering, BertTokenizer),
@@ -839,6 +854,12 @@ def main():
 
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    """
+    Change dropout rate values
+    - hidden_dropout_prob: The dropout probability for all fully connected layers in the embeddings, encoder, and pooler.
+    - attention_probs_dropout_prob: The dropout ratio for the attention probabilities.
+    - summary_last_dropout : The dropout ratio used when doing sequence summary, sequence classification, and multiple-choice models.
+    """
     config = config_class.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         cache_dir=args.cache_dir if args.cache_dir else None,
