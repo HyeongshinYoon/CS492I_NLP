@@ -539,6 +539,7 @@ class SquadProcessor(DataProcessor):
             per_qa_paragraph_cnt = 0
             per_qa_unans_paragraph_cnt = 0
             
+            # 
             if example_style == "iter" or example_style == "rand":
                 pa_list = []
                 for pi, paragraph in enumerate(entry["paragraphs"]):
@@ -586,8 +587,9 @@ class SquadProcessor(DataProcessor):
                         continue
 
                     # todo: How to select training samples considering a memory limit.
+                    # Adjusting the maximum number of per_qa_paragraph_cnt to 1. 
                     per_qa_paragraph_cnt += 1
-                    if is_training and per_qa_paragraph_cnt > 3:
+                    if is_training and per_qa_paragraph_cnt > 1:
                         break
 
                     if is_impossible:

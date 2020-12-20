@@ -76,7 +76,7 @@ logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
-tqdm = partial(tqdm, mininterval=3600) # 1ì‹œê°„
+tqdm = partial(tqdm, mininterval=3600) # 1?‹œê°?
 
 """
 ALL_MODELS = sum(
@@ -93,9 +93,7 @@ ALL_MODELS = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
 MODEL_CLASSES = {
     "bert": (BertConfig, BertForQuestionAnswering, BertTokenizer),
     "roberta": (RobertaConfig, RobertaForQuestionAnswering, RobertaTokenizer),
-    "xlnet": (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),
-    "xlm": (XLMConfig, XLMForQuestionAnswering, XLMTokenizer),
-    "distilbert": (DistilBertConfig, DistilBertForQuestionAnswering, DistilBertTokenizer),
+    "xlnet": (XLNetConfig, XLNetForQuestionAnswering, XLNetTokenizer),stilBertTokenizer),
     "albert": (AlbertConfig, AlbertForQuestionAnswering, AlbertTokenizer),
     "koelectra": (ElectraConfig, ElectraForQuestionAnswering, ElectraTokenizer),
     "kobert" : (BertConfig, BertForQuestionAnswering, KoBertTokenizer)
@@ -750,7 +748,8 @@ def main():
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed for initialization")
 
-    parser.add_argument("--example_style", type=str, default="", help="Change the example style. ['iter', 'rand', 'rele']")
+    # Change the selecting styles for example paragraphs.
+    parser.add_argument("--example_style", type=str, default="", help="Change the selecting styles of example paragraphs. ['iter', 'rand', 'rele']")
     
     parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
     parser.add_argument(

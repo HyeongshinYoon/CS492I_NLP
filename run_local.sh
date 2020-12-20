@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 python3 run_squad.py \
-    --model_type bert \
-    --model_name_or_path bert-base-multilingual-cased \
+    --model_type koelectra \
+    --model_name_or_path monologg/koelectra-base-v3-discriminator \
     --do_train \
     --do_eval \
     --data_dir train \
@@ -12,4 +12,5 @@ python3 run_squad.py \
     --output_dir output \
     --verbose_logging \
     --overwrite_output_dir \
-    --version_2_with_negative
+    --version_2_with_negative \
+    --example_style iter
